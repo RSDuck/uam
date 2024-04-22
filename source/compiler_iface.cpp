@@ -278,7 +278,7 @@ DekoCompiler::DekoCompiler(pipeline_stage stage, int optLevel) :
 
 	m_info.assignSlots = nvc0_program_assign_varying_slots;
 
-	glsl_frontend_init();
+	//glsl_frontend_init();
 }
 
 DekoCompiler::~DekoCompiler()
@@ -286,7 +286,7 @@ DekoCompiler::~DekoCompiler()
 	if (m_glsl)
 		glsl_program_free(m_glsl);
 
-	glsl_frontend_exit();
+	//glsl_frontend_exit();
 }
 
 bool DekoCompiler::CompileGlsl(const char* glsl)
@@ -622,15 +622,61 @@ void DekoCompiler::GenerateHeaders()
 	}
 }
 
-void DekoCompiler::OutputDksh(const char* dkshFile)
+void DekoCompiler::FillDkshHeader(DkshHeader& hdr)
 {
-	DkshHeader hdr = {};
 	hdr.magic        = DKSH_MAGIC;
 	hdr.header_sz    = sizeof(DkshHeader);
 	hdr.control_sz   = Align256(sizeof(DkshHeader) + sizeof(DkshProgramHeader));
 	hdr.code_sz      = Align256((m_stage != pipeline_stage_compute ? 0x80 : 0x00) + m_codeSize) + Align256(m_dataSize);
 	hdr.programs_off = sizeof(DkshHeader);
 	hdr.num_programs = 1;
+}
+
+uint8_t* DekoCompiler::OutputDksh(uint32_t& size)
+{
+	size = sizeof(DkshHeader);
+	uint32_t offsetDkph = size;
+	size += sizeof(m_dkph);
+	size = (size + 255) & ~255;
+	uint32_t offsetNvsh;
+	if (m_stage != pipeline_stage_compute)
+	{
+		size += s_shaderStartOffset;
+		offsetNvsh = size;
+		size += sizeof(m_nvsh);
+	}
+
+	uint32_t offsetCode = size;
+	size += m_codeSize;
+	size = (size + 255) & ~255;
+
+	uint32_t offsetData = size;
+	size += m_dataSize;
+	size = (size + 255) & ~255;
+
+	uint8_t* buffer = (uint8_t*)malloc(size);
+
+	DkshHeader hdr = {};
+	FillDkshHeader(hdr);
+
+	memcpy(buffer, &hdr, sizeof(hdr));
+	memcpy(&buffer[offsetDkph], &m_dkph, sizeof(m_dkph));
+
+	if (m_stage != pipeline_stage_compute)
+	{
+		memcpy(&buffer[offsetNvsh], &m_nvsh, sizeof(m_nvsh));
+	}
+
+	memcpy(&buffer[offsetCode], m_code, m_codeSize);
+	memcpy(&buffer[offsetData], m_data, m_dataSize);
+
+	return buffer;
+}
+
+void DekoCompiler::OutputDksh(const char* dkshFile)
+{
+	DkshHeader hdr = {};
+	FillDkshHeader(hdr);
 
 	FILE* f = fopen(dkshFile, "wb");
 	if (f)

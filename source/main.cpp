@@ -94,9 +94,13 @@ int main(int argc, char* argv[])
 	fclose(fin);
 	glsl_source[fsize] = 0;
 
+	glsl_frontend_init();
+
 	DekoCompiler compiler{stage};
 	bool rc = compiler.CompileGlsl(glsl_source);
 	delete[] glsl_source;
+
+	glsl_frontend_exit();
 
 	if (!rc)
 		return EXIT_FAILURE;

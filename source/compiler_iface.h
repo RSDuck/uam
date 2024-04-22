@@ -33,12 +33,15 @@ class DekoCompiler
 	void RetrieveAndPadCode();
 	void GenerateHeaders();
 
+	void FillDkshHeader(DkshHeader& hdr);
+
 public:
 	DekoCompiler(pipeline_stage stage, int optLevel = 3);
 	~DekoCompiler();
 
 	bool CompileGlsl(const char* glsl);
 	void OutputDksh(const char* dkshFile);
+	uint8_t* OutputDksh(uint32_t& size);
 	void OutputRawCode(const char* rawFile);
 	void OutputTgsi(const char* tgsiFile);
 };

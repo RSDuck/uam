@@ -44,11 +44,15 @@ else
 	]
 endif
 
-foreach a : [ '-ffunction-sections' ]
-	if compiler_c.has_argument(a)
-		pre_args += a
-	endif
-endforeach
+build_as_library = get_option('build_as_library')
+
+if not build_as_library
+	foreach a : [ '-ffunction-sections' ]
+		if compiler_c.has_argument(a)
+			pre_args += a
+		endif
+	endforeach
+endif
 
 foreach a : pre_args
 	add_project_arguments(a, language : ['c', 'cpp'])
@@ -66,21 +70,35 @@ foreach a : [ '-Wno-class-memaccess', '-Wno-non-virtual-dtor' ]
 	endif
 endforeach
 
-foreach a : [ '-Wl,--gc-sections' ]
-	if compiler_c.has_link_argument(a)
-		add_project_link_arguments(a, language : [ 'c', 'cpp' ])
-	endif
-endforeach
+
+if not build_as_library
+	foreach a : [ '-Wl,--gc-sections' ]
+		if compiler_c.has_link_argument(a)
+			add_project_link_arguments(a, language : [ 'c', 'cpp' ])
+		endif
+	endforeach
+endif
 
 uam_files = []
 uam_incs = []
 
+uam_files_executable = []
+uam_files_library = []
+
 subdir('source')
 subdir('mesa-imported')
 
-uam = executable(
-	'uam',
-	uam_files,
-	include_directories: uam_incs,
-	install: true,
-)
+if build_as_library
+	uam = static_library(
+		'uam',
+		uam_files + uam_files_library,
+		include_directories: uam_incs
+	)
+else
+	uam = executable(
+		'uam',
+		uam_files + uam_files_executable,
+		include_directories: uam_incs,
+		install: true,
+	)
+endif

@@ -15,6 +15,10 @@ UAM is the shader compiler designed to produce precompiled DKSH shaders usable w
 
 UAM is based on [mesa](https://www.mesa3d.org/)'s GLSL parser and TGSI infrastructure; as well as nouveau's nv50_ir code generation backend. As such, it inherits all the capabilities and the feature set (GLSL extension support) offered by mesa/nouveau for GM20x GPUs. In addition, there are a number of customizations and codegen improvements that produce code better suited for use with deko3d.
 
+## Using it as a library
+
+By passing `-Dbuild_as_library=true --cross-file=crossfile` to meson, uam can be compiled as a library to compile GLSL shaders at runtime on a Nintendo Switch. See `uam.h` for the public interface.
+
 ## Differences with standard GL and mesa/nouveau
 
 - The `DEKO3D` preprocessor symbol is defined, with a value of 100.
